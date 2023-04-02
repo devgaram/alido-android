@@ -6,16 +6,16 @@ import android.graphics.PixelFormat
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.MotionEvent
-import android.view.View
 import android.view.WindowManager
+import android.widget.RelativeLayout
+
 
 @SuppressLint("ClickableViewAccessibility")
-abstract class OverlayView (
+class OverlayView @JvmOverloads constructor (
     context:Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-): View(context, attrs, defStyleAttr) {
-
+    defStyleAttr: Int = 0,
+): RelativeLayout(context, attrs, defStyleAttr) {
     private val windowManager by lazy {
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     }
@@ -25,18 +25,17 @@ abstract class OverlayView (
     private var xInitMargin: Int = 0
     private var yInitMargin: Int = 0
 
-    abstract val type: Int
 
     init {
         val wmParams =  WindowManager.LayoutParams(
            WindowManager.LayoutParams.WRAP_CONTENT,
            WindowManager.LayoutParams.WRAP_CONTENT,
-           type,
+           WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
            PixelFormat.TRANSLUCENT
         )
-
         wmParams.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+
         windowManager.addView(this, wmParams)
 
         setOnTouchListener {_, event ->
@@ -68,6 +67,13 @@ abstract class OverlayView (
             }
             return@setOnTouchListener true
         }
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
+    override fun onLayout(p0: Boolean, p1: Int, p2: Int, p3: Int, p4: Int) {
+       super.onLayout(p0, p1, p2, p3, p4)
     }
 
 }
