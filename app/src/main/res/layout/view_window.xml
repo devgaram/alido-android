@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.example.forparent.OverlayView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:padding="20dp"
     android:background="#0000ff">
     <Button
-        android:id="@+id/capture"
+        android:id="@+id/capture_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/cardview_dark_background"
-        android:text="둥실이" />
-</com.example.forparent.OverlayView>
+        android:text="둥실이"
+        tools:ignore="MissingConstraints" />
+</androidx.constraintlayout.widget.ConstraintLayout>
