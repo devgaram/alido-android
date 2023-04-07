@@ -33,6 +33,7 @@ class MainService: Service() {
     private var resultCode:Int ? = null
     private var resultData:Intent ? = null
     private var windowManager: WindowManager? = null
+    private var inflater: LayoutInflater? = null
 
     companion object {
         const val NOTIFICATION_ID = 123456
@@ -44,9 +45,15 @@ class MainService: Service() {
     override fun onCreate() {
         super.onCreate()
 
+        init()
         showNotification()
-        showWindow()
+        showFloating()
 
+    }
+
+    private fun init() {
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -86,20 +93,14 @@ class MainService: Service() {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun showWindow() {
-        var xInitCord: Int = 0
-        var yInitCord: Int = 0
-        var xInitMargin: Int = 0
-        var yInitMargin: Int = 0
+    private fun showFloating() {
+        var xInitCord = 0
+        var yInitCord = 0
+        var xInitMargin = 0
+        var yInitMargin = 0
 
-        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        val view = inflater.inflate(R.layout.view_window, null)
+        val floatingView = getFloatingView()
 
-        view.findViewById<Button>(R.id.capture_button).setOnClickListener{
-            captureScreen()
-        }
-
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager?.let {wm ->
             val wmParams =  WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -109,10 +110,10 @@ class MainService: Service() {
                 PixelFormat.TRANSLUCENT
             )
             wmParams.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            wm.addView(view, wmParams)
+            wm.addView(floatingView, wmParams)
 
-            view?.setOnTouchListener {_, event ->
-                val layoutParams = view?.layoutParams as WindowManager.LayoutParams;
+            floatingView?.setOnTouchListener {_, event ->
+                val layoutParams = floatingView?.layoutParams as WindowManager.LayoutParams;
                 val xCord = event.rawX.toInt()
                 val yCord = event.rawY.toInt()
                 val xCordDestination: Int
@@ -132,7 +133,7 @@ class MainService: Service() {
                         yCordDestination = yInitMargin + yDiffMove
                         layoutParams.x = xCordDestination
                         layoutParams.y = yCordDestination
-                        wm.updateViewLayout(view, layoutParams)
+                        wm.updateViewLayout(floatingView, layoutParams)
                     }
                     MotionEvent.ACTION_UP -> { }
                 }
@@ -140,6 +141,69 @@ class MainService: Service() {
                 return@setOnTouchListener true
             }
         }
+    }
+
+    private fun getFloatingView(): View {
+        val view = inflater!!.inflate(R.layout.view_floating, null)
+
+        view.findViewById<Button>(R.id.show_prompt_button).setOnClickListener{
+            showPrompt()
+        }
+
+        return view
+    }
+
+    private fun getPromptView(): View {
+        val view = inflater!!.inflate(R.layout.view_prompt, null)
+
+        view.findViewById<Button>(R.id.prompt_exit).setOnClickListener{
+            windowManager?.removeView(view)
+        }
+
+        view.findViewById<Button>(R.id.start_record_audio).setOnClickListener{
+            windowManager?.removeView(view)
+            showRecordPrompt()
+        }
+
+        return view
+    }
+
+    private fun getRecordView(): View {
+        val view = inflater!!.inflate(R.layout.view_audio_record, null)
+
+        view.findViewById<Button>(R.id.exit_record_audio).setOnClickListener{
+            windowManager?.removeView(view)
+        }
+
+        return view
+    }
+
+    private fun showPrompt() {
+        val promptView = getPromptView()
+
+        val wmParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+        wmParams.gravity = Gravity.CENTER_HORIZONTAL
+        windowManager?.addView(promptView, wmParams)
+    }
+
+    private fun showRecordPrompt() {
+        val recordView = getRecordView()
+
+        val wmParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+        wmParams.gravity = Gravity.CENTER_HORIZONTAL
+        windowManager?.addView(recordView, wmParams)
     }
 
     @SuppressLint("WrongConstant")
