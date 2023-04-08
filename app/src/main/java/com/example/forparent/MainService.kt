@@ -423,7 +423,8 @@ class MainService : Service() {
             stopRecord()
             windowManager.removeView(view)
 
-            if (screenFile == null || speechText.isEmpty()) {
+            Log.i("test", speechText)
+            if (speechText.isEmpty()) {
                 showNoAudioView()
             } else {
                 sendVideo()
