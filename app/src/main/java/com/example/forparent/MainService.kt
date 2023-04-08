@@ -5,6 +5,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
@@ -52,9 +54,12 @@ class MainService : Service() {
     private var speechRecognizer: SpeechRecognizer? = null
     private var speechText: String = ""
     private var screenFile: File? = null
+    private var packageName: String = ""
 
     private var videoId: String? = null
     private var startTime: Float? = 0f
+
+
 
     companion object {
         const val NOTIFICATION_ID = 123456
@@ -159,9 +164,25 @@ class MainService : Service() {
         view.findViewById<Button>(R.id.show_prompt_button).setOnClickListener {
             captureScreen()
             showPrompt()
+            setPackageNameFromStatService()
         }
 
         return view
+    }
+
+
+    private fun setPackageNameFromStatService() {
+        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val currentTime = System.currentTimeMillis()
+        val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_BEST, currentTime - 1000 * 60 * 5, currentTime)
+
+        if (stats != null) {
+            val mostRecentStats = stats.sortedByDescending { it.lastTimeUsed }.firstOrNull()
+            if (mostRecentStats != null) {
+                packageName = mostRecentStats.packageName
+                Log.d("Foreground app", "Package name: $packageName")
+            }
+        }
     }
 
     private fun showPrompt() {
@@ -211,13 +232,13 @@ class MainService : Service() {
     }
 
     private fun getYoutubeView(): View {
-        val youtubeView = inflater.inflate(R.layout.view_youtube, null)
-        val youtubeLandscapeView = inflater.inflate(R.layout.view_youtube_landscape, null)
+        val view = inflater.inflate(R.layout.view_youtube, null)
+        val landView = inflater.inflate(R.layout.view_youtube_landscape, null)
 
-        val youTubePlayerView: YouTubePlayerView = youtubeView.findViewById(R.id.youtube_player_view)
-        val youTubePlayerLandView: YouTubePlayerView = youtubeLandscapeView.findViewById(R.id.youtube_player_view_landscape)
+        val playerView: YouTubePlayerView = view.findViewById(R.id.youtube_player_view)
+        val playerLandView: YouTubePlayerView = landView.findViewById(R.id.youtube_player_view_landscape)
 
-        youTubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+        playerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 youTubePlayer.cueVideo(videoId!!, startTime!!)
             }
@@ -229,7 +250,7 @@ class MainService : Service() {
                 super.onStateChange(youTubePlayer, state)
 
                 when (state) {
-                    PlayerConstants.PlayerState.PLAYING -> {
+                    PlayerConstants.PlayerState.UNSTARTED -> {
 
                         val wmParams = WindowManager.LayoutParams(
                             WindowManager.LayoutParams.MATCH_PARENT,
@@ -238,31 +259,32 @@ class MainService : Service() {
                             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                             PixelFormat.TRANSLUCENT
                         )
+
                         wmParams.gravity = Gravity.CENTER_HORIZONTAL
                         wmParams.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        windowManager.removeView(youtubeView)
-                        windowManager.addView(youtubeLandscapeView, wmParams)
+                        windowManager.removeView(view)
+                        windowManager.addView(landView, wmParams)
                     }
                     else -> Log.i("t", "")
                 }
             }
         })
 
-        youTubePlayerLandView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+        playerLandView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 youTubePlayer.loadVideo(videoId!!, startTime!!)
             }
         })
 
-        youtubeView.findViewById<Button>(R.id.youtube_exit_button).setOnClickListener {
-            windowManager.removeView(youtubeView)
+        view.findViewById<Button>(R.id.youtube_exit_button).setOnClickListener {
+            windowManager.removeView(view)
         }
 
-        youtubeLandscapeView.findViewById<Button>(R.id.youtube_exit_button_landscape).setOnClickListener {
-            windowManager.removeView(youtubeLandscapeView)
+        landView.findViewById<Button>(R.id.youtube_exit_button_landscape).setOnClickListener {
+            windowManager.removeView(landView)
         }
 
-        return youtubeView
+        return view
     }
 
     private fun getJsonFromServer(): String {
@@ -277,6 +299,7 @@ class MainService : Service() {
                 RequestBody.create(MediaType.parse("image/*"), screenFile!!)
             )
             .addFormDataPart("input_text", speechText)
+            .addFormDataPart("package_name", packageName)
             .build()
 
         val request = Request.Builder()
@@ -302,8 +325,6 @@ class MainService : Service() {
 
             val loadingView = showLoadingView()
 
-            Log.i("request", speechText)
-
             val result = CoroutineScope(Dispatchers.IO).async {
                 getJsonFromServer()
             }.await()
@@ -316,7 +337,12 @@ class MainService : Service() {
             startTime = jsonObject.getInt("startTime").toFloat()
 
 
-            showYoutube()
+            if (videoId != null) {
+                showYoutube()
+            } else {
+                showNoAudioView()
+            }
+
         }
 
     }
@@ -360,12 +386,12 @@ class MainService : Service() {
 
 
         noAudioView.findViewById<Button>(R.id.no_record_exit).setOnClickListener {
-            windowManager?.removeView(noAudioView)
+            windowManager.removeView(noAudioView)
         }
 
         noAudioView.findViewById<Button>(R.id.restart_record).setOnClickListener {
+            windowManager.removeView(noAudioView)
             startRecord()
-            windowManager?.removeView(noAudioView)
             showRecordPrompt()
         }
 
@@ -387,14 +413,15 @@ class MainService : Service() {
 
 
     private fun getRecordView(): View {
-        val view = inflater!!.inflate(R.layout.view_audio_record, null)
+        val view = inflater.inflate(R.layout.view_audio_record, null)
 
         view.findViewById<Button>(R.id.exit_record_audio).setOnClickListener {
-            windowManager?.removeView(view)
+            windowManager.removeView(view)
         }
 
         view.findViewById<Button>(R.id.stop_record_audio).setOnClickListener {
             stopRecord()
+            windowManager.removeView(view)
 
             if (screenFile == null || speechText.isEmpty()) {
                 showNoAudioView()
@@ -448,7 +475,6 @@ class MainService : Service() {
         override fun onEndOfSpeech() {}
 
         override fun onError(error: Int) {
-            Log.e("test", error.toString())
 
             // 에러 처리 필요
         }

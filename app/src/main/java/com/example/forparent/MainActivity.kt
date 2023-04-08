@@ -1,11 +1,16 @@
 package com.example.forparent
 
+import android.app.AppOpsManager
+import android.app.AppOpsManager.OPSTR_GET_USAGE_STATS
+import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.widget.Button
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +31,8 @@ class MainActivity : AppCompatActivity() {
         checkAudioPermission()
         checkStoragePermission()
         checkMediaProjectPermission()
+        checkPackageStats()
+
 
         val startButton = findViewById<Button>(R.id.start_button)
         startButton.setOnClickListener {
@@ -124,4 +131,14 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
     }
+
+    private fun checkPackageStats() {
+        val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+        if (mode != AppOpsManager.MODE_ALLOWED) {
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            startActivity(intent)
+        }
+    }
+
 }
