@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        checkAudioPermission()
         checkStoragePermission()
         checkMediaProjectPermission()
 
@@ -30,6 +31,8 @@ class MainActivity : AppCompatActivity() {
         startButton.setOnClickListener {
             checkWindowPermission()
         }
+
+
     }
 
     private fun checkStoragePermission() {
@@ -43,6 +46,22 @@ class MainActivity : AppCompatActivity() {
                         android.Manifest.permission.READ_EXTERNAL_STORAGE,
                         android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     ), 300
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun checkAudioPermission() {
+        try {
+            if (
+                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) !== PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this, arrayOf(
+                        android.Manifest.permission.RECORD_AUDIO
+                    ), 1
                 )
             }
         } catch (e: Exception) {

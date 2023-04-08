@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -13,20 +15,27 @@ import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
-import android.os.Build
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.*
 import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.OutputStream
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+import okhttp3.*
+import org.json.JSONObject
+import java.io.*
 
 
-class MainService: Service() {
+class MainService: Service()  {
 
     private var mediaProjectionManager:MediaProjectionManager? = null
     private var mediaProjection: MediaProjection? = null
@@ -34,6 +43,10 @@ class MainService: Service() {
     private var resultData:Intent ? = null
     private var windowManager: WindowManager? = null
     private var inflater: LayoutInflater? = null
+    private var recognizerIntent:Intent? = null
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var contentText: EditText? = null
+    private var screenFile:File ?= null
 
     companion object {
         const val NOTIFICATION_ID = 123456
@@ -46,14 +59,102 @@ class MainService: Service() {
         super.onCreate()
 
         init()
+        initRecognizer()
         showNotification()
         showFloating()
 
     }
 
+    private fun getYoutubeView():View {
+        val youtubeView = inflater!!.inflate(R.layout.view_youtube, null)
+        val youTubePlayerView: YouTubePlayerView = youtubeView.findViewById(R.id.youtube_player_view)
+        youTubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+                val videoId = "S0Q4gqBUs7c"
+
+                youTubePlayer.cueVideo(videoId, 0f)
+            }
+
+            override fun onStateChange(
+                youTubePlayer: YouTubePlayer,
+                state: PlayerConstants.PlayerState
+            ) {
+                super.onStateChange(youTubePlayer, state)
+
+                when(state) {
+                    PlayerConstants.PlayerState.PLAYING -> {
+
+                        val wmParams = WindowManager.LayoutParams(
+                            WindowManager.LayoutParams.MATCH_PARENT,
+                            WindowManager.LayoutParams.MATCH_PARENT,
+                            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                            PixelFormat.TRANSLUCENT
+                        )
+                        wmParams.gravity = Gravity.CENTER_HORIZONTAL
+                        wmParams.screenOrientation =  ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                        windowManager?.updateViewLayout(youtubeView, wmParams)
+                    }
+                    else -> Log.i("t","")
+                }
+            }
+        })
+
+        return youtubeView
+    }
+
+    private fun sendVideo() {
+
+
+        try {
+            val client = OkHttpClient()
+
+
+            val requestBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart(
+                    "image_file",
+                    screenFile!!.name,
+                    RequestBody.create(MediaType.parse("image/*"), screenFile!!)
+                )
+                .addFormDataPart("input_text", "Hello, FastAPI!")
+                .build()
+
+            val request = Request.Builder()
+                .url("http://61.42.251.241:7979/uploadfile/")
+                .post(requestBody)
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    // Handle failure
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val json = response.body()?.string()
+                    val jsonObject = JSONObject(json)
+//                    val videoUrl = jsonObject.get("videoId")
+//                    val startTime = jsonObject.get("startTime")
+////                     Handle responseString
+//                    Log.i("ttt", videoUrl.toString() + startTime.toString())
+                }
+            })
+        }catch (e: java.lang.Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
     private fun init() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+
+    }
+
+    private fun initRecognizer() {
+        recognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        recognizerIntent?.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName);
+        recognizerIntent?.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"ko-KR")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -147,6 +248,8 @@ class MainService: Service() {
         val view = inflater!!.inflate(R.layout.view_floating, null)
 
         view.findViewById<Button>(R.id.show_prompt_button).setOnClickListener{
+            // 이미지 캡처
+            captureScreen()
             showPrompt()
         }
 
@@ -171,11 +274,40 @@ class MainService: Service() {
     private fun getRecordView(): View {
         val view = inflater!!.inflate(R.layout.view_audio_record, null)
 
+        contentText = view.findViewById<EditText>(R.id.content_text)
+
         view.findViewById<Button>(R.id.exit_record_audio).setOnClickListener{
             windowManager?.removeView(view)
         }
 
+        view.findViewById<Button>(R.id.stop_record_audio).setOnClickListener{
+            // 음성 녹음 종료
+            stopRecord()
+            // api 호출
+
+            Thread {
+                sendVideo()
+            }.start()
+
+            showYoutube()
+
+        }
+
         return view
+    }
+
+    private fun showYoutube() {
+        val youtubeView =  getYoutubeView()
+
+        val wmParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+        wmParams.gravity = Gravity.CENTER_HORIZONTAL
+        windowManager?.addView(youtubeView, wmParams)
     }
 
     private fun showPrompt() {
@@ -204,6 +336,61 @@ class MainService: Service() {
         )
         wmParams.gravity = Gravity.CENTER_HORIZONTAL
         windowManager?.addView(recordView, wmParams)
+
+        // 음성 인식 시작
+        startRecord()
+    }
+
+    private fun startRecord() {
+        speechRecognizer= SpeechRecognizer.createSpeechRecognizer(applicationContext);
+        speechRecognizer?.setRecognitionListener(recognitionListener())
+        speechRecognizer?.startListening(recognizerIntent!!);
+    }
+
+    private fun recognitionListener() = object : RecognitionListener {
+        override fun onReadyForSpeech(params: Bundle?) = Toast.makeText(applicationContext, "음성인식 시작", Toast.LENGTH_SHORT).show()
+
+        override fun onRmsChanged(rmsdB: Float) {}
+
+        override fun onBufferReceived(buffer: ByteArray?) {}
+
+        override fun onPartialResults(partialResults: Bundle?) {}
+
+        override fun onEvent(eventType: Int, params: Bundle?) {}
+
+        // 말하기 시작
+        override fun onBeginningOfSpeech() {}
+
+        // 말 멈추면 호출
+        override fun onEndOfSpeech() {}
+
+        override fun onError(error: Int) {
+           Log.e("test", error.toString())
+
+            // 에러 처리 필요
+        }
+
+        override fun onResults(results: Bundle) {
+            val matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+
+            val originText = contentText?.text
+
+            Log.i("test", matches.toString())
+            var newText = ""
+
+            if (matches != null) {
+                for(i in 0 until matches.size)
+                    newText += matches[i]
+            }
+
+            contentText?.setText("$originText$newText ")
+            speechRecognizer?.startListening(recognizerIntent); // 계속 녹음
+        }
+    }
+
+
+    private fun stopRecord() {
+        speechRecognizer?.stopListening();   //녹음 중지
     }
 
     @SuppressLint("WrongConstant")
@@ -243,6 +430,9 @@ class MainService: Service() {
                             var bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888)
                             bitmap.copyPixelsFromBuffer(buffer)
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+
+                            screenFile = file
+
                         } finally {
                             outputStream?.close()
                         }
@@ -307,6 +497,8 @@ class MainService: Service() {
             displayMetrics.densityDpi
         }?: 0
     }
+
+
 
 }
 
