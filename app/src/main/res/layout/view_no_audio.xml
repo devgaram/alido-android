@@ -14,21 +14,17 @@
         android:background="@color/background"
         android:orientation="vertical"
         android:gravity="center">
-        <ImageView
-            android:layout_width="187sp"
-            android:layout_height="187sp"
-            android:src="@drawable/hello_prompt" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20sp"
             android:textAlignment="center"
-            android:text="스마트폰 사용법을\n알려드리는 알리도에요!"
+            android:text="알리도가 하신 말씀을\n 듣지 못했어요!"
             android:textColor="@color/black"
             android:textSize="32sp"/>
 
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/start_record_audio"
+            android:id="@+id/restart_record"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="40sp"
@@ -40,9 +36,9 @@
             android:textColor="@color/white"
             android:textAlignment="center"
             android:textSize="24sp"
-            android:text="지금 질문하기"/>
+            android:text="다시 말할게요!"/>
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/prompt_exit"
+            android:id="@+id/no_record_exit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="25sp"

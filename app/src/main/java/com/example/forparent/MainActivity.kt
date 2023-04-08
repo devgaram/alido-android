@@ -17,7 +17,7 @@ import androidx.core.net.toUri
 
 class MainActivity : AppCompatActivity() {
 
-    private var mediaProjectionResult:ActivityResult? = null
+    private lateinit var mediaProjectionResult: ActivityResult
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,32 +31,14 @@ class MainActivity : AppCompatActivity() {
         startButton.setOnClickListener {
             checkWindowPermission()
         }
-
-
     }
 
-    private fun checkStoragePermission() {
-        try {
-            if (
-                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) !== PackageManager.PERMISSION_GRANTED
-                || ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) !== PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this, arrayOf(
-                        android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    ), 300
-                )
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     private fun checkAudioPermission() {
         try {
-            if (
-                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) !== PackageManager.PERMISSION_GRANTED
+            if (ActivityCompat.checkSelfPermission(
+                    this, android.Manifest.permission.RECORD_AUDIO
+                ) !== PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
                     this, arrayOf(
@@ -80,7 +62,9 @@ class MainActivity : AppCompatActivity() {
     private fun checkWindowPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!Settings.canDrawOverlays((this))) {
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri()
+                )
                 overlayActivityResult.launch(intent)
             } else {
                 // 이미 권한 허용한 경우
@@ -91,14 +75,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun startMainService() {
         val serviceIntent = Intent(this, MainService::class.java)
-        serviceIntent.putExtra("resultCode", mediaProjectionResult?.resultCode)
-        serviceIntent.putExtra("resultData", mediaProjectionResult?.data)
+        serviceIntent.putExtra("resultCode", mediaProjectionResult.resultCode)
+        serviceIntent.putExtra("resultData", mediaProjectionResult.data)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
         } else {
             startService(serviceIntent)
         }
+
+        // Home 이동
+        val homeIntent = Intent(Intent.ACTION_MAIN)
+        homeIntent.addCategory(Intent.CATEGORY_HOME)
+        homeIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(homeIntent)
+
     }
 
     private val mediaProjectionActivityResult = registerForActivityResult(
@@ -111,6 +102,26 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkMediaProjectPermission() {
         val mediaProjectionManager = getSystemService(MediaProjectionManager::class.java)
-        mediaProjectionActivityResult.launch(mediaProjectionManager?.createScreenCaptureIntent())
+        mediaProjectionActivityResult.launch(mediaProjectionManager.createScreenCaptureIntent())
+    }
+
+    private fun checkStoragePermission() {
+        try {
+            if (ActivityCompat.checkSelfPermission(
+                    this, android.Manifest.permission.READ_EXTERNAL_STORAGE
+                ) !== PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
+                    this, android.Manifest.permission.READ_EXTERNAL_STORAGE
+                ) !== PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this, arrayOf(
+                        android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    ), 300
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

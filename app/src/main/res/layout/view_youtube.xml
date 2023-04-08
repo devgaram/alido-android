@@ -1,19 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:background="@color/cardview_shadow_start_color"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="20sp">
 
-    <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-        android:id="@+id/youtube_player_view"
+    <androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="352dp" />
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        android:gravity="center"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/youtube_exit_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="나가기" />
-</LinearLayout>
+        <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+            android:id="@+id/youtube_player_view"
+            android:layout_width="match_parent"
+            android:layout_height="253dp"
+            android:layout_marginHorizontal="10sp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30sp"
+            android:textAlignment="center"
+            android:text="물어보신 걸 알려드리는\n유튜브 영상이에요!"
+            android:textColor="@color/black"
+            android:textSize="32sp"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/youtube_exit_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20sp"
+            android:layout_marginTop="40sp"
+            android:background="@drawable/radius"
+            android:backgroundTint="@color/secondary_button"
+            android:paddingHorizontal="70sp"
+            android:paddingVertical="20sp"
+            android:text="나가기"
+            android:textColor="@color/white"
+            android:textAlignment="center"
+            android:textSize="24sp" />
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</androidx.appcompat.widget.LinearLayoutCompat>
+

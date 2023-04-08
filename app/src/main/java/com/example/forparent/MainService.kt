@@ -12,7 +12,6 @@ import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.media.Image
 import android.media.ImageReader
-import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.*
 import android.speech.RecognitionListener
@@ -48,15 +47,10 @@ class MainService : Service() {
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR")
     }
-    private var resultCode:Int ? = null
-    private var resultData:Intent ? = null
-//    private val mediaProjectionManager by lazy {
-//        getSystemService(MediaProjectionManager::class.java)
-//    }
-
-//    private lateinit var mediaProjection: MediaProjection
+    private var resultCode: Int? = null
+    private var resultData: Intent? = null
     private var speechRecognizer: SpeechRecognizer? = null
-    private var speechText: String? = null
+    private var speechText: String = ""
     private var screenFile: File? = null
 
     private var videoId: String? = null
@@ -71,7 +65,7 @@ class MainService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         resultCode = intent?.getIntExtra("resultCode", 0)
-        resultData = intent?.getParcelableExtra("resultData" )
+        resultData = intent?.getParcelableExtra("resultData")
 
 
         return START_NOT_STICKY
@@ -98,7 +92,7 @@ class MainService : Service() {
         }
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("둥실이와 함께하는 중")
+            .setContentTitle("알리도와 함께하는 중")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .setWhen(System.currentTimeMillis())
@@ -125,6 +119,7 @@ class MainService : Service() {
         wmParams.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
         windowManager.addView(floatingView, wmParams)
 
+
         floatingView.setOnTouchListener { _, event ->
             val layoutParams = floatingView.layoutParams as WindowManager.LayoutParams;
             val xCord = event.rawX.toInt()
@@ -138,6 +133,7 @@ class MainService : Service() {
                     yInitCord = yCord
                     xInitMargin = layoutParams.x
                     yInitMargin = layoutParams.y
+
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val xDiffMove: Int = xCord - xInitCord
@@ -148,7 +144,8 @@ class MainService : Service() {
                     layoutParams.y = yCordDestination
                     windowManager.updateViewLayout(floatingView, layoutParams)
                 }
-                MotionEvent.ACTION_UP -> {}
+                MotionEvent.ACTION_UP -> {
+                }
             }
 
             return@setOnTouchListener true
@@ -215,13 +212,13 @@ class MainService : Service() {
 
     private fun getYoutubeView(): View {
         val youtubeView = inflater.inflate(R.layout.view_youtube, null)
-        val youTubePlayerView: YouTubePlayerView =
-            youtubeView.findViewById(R.id.youtube_player_view)
+        val youtubeLandscapeView = inflater.inflate(R.layout.view_youtube_landscape, null)
+
+        val youTubePlayerView: YouTubePlayerView = youtubeView.findViewById(R.id.youtube_player_view)
+        val youTubePlayerLandView: YouTubePlayerView = youtubeLandscapeView.findViewById(R.id.youtube_player_view_landscape)
+
         youTubePlayerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
-//                youTubePlayer.cueVideo(videoId!!, startTime!!)
-
-
                 youTubePlayer.cueVideo(videoId!!, startTime!!)
             }
 
@@ -243,24 +240,32 @@ class MainService : Service() {
                         )
                         wmParams.gravity = Gravity.CENTER_HORIZONTAL
                         wmParams.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        windowManager?.updateViewLayout(youtubeView, wmParams)
+                        windowManager.removeView(youtubeView)
+                        windowManager.addView(youtubeLandscapeView, wmParams)
                     }
                     else -> Log.i("t", "")
                 }
             }
         })
 
+        youTubePlayerLandView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+                youTubePlayer.loadVideo(videoId!!, startTime!!)
+            }
+        })
+
         youtubeView.findViewById<Button>(R.id.youtube_exit_button).setOnClickListener {
-            windowManager?.removeView(youtubeView)
+            windowManager.removeView(youtubeView)
+        }
+
+        youtubeLandscapeView.findViewById<Button>(R.id.youtube_exit_button_landscape).setOnClickListener {
+            windowManager.removeView(youtubeLandscapeView)
         }
 
         return youtubeView
     }
 
     private fun getJsonFromServer(): String {
-        // HTTP 콜을 수행하는 코드를 작성합니다.
-        // 결과값은 JSON 형태의 문자열로 반환합니다.
-
 
         val client = OkHttpClient()
 
@@ -271,8 +276,7 @@ class MainService : Service() {
                 screenFile!!.name,
                 RequestBody.create(MediaType.parse("image/*"), screenFile!!)
             )
-//            .addFormDataPart("input_text", speechText)
-            .addFormDataPart("input_text",  speechText)
+            .addFormDataPart("input_text", speechText)
             .build()
 
         val request = Request.Builder()
@@ -281,8 +285,7 @@ class MainService : Service() {
             .build()
 
 
-        client.newCall(request).execute().use {
-            response ->
+        client.newCall(request).execute().use { response ->
             return if (response.body() != null) {
                 response.body()!!.string()
 
@@ -291,58 +294,82 @@ class MainService : Service() {
             }
         }
 
-//
-//        val response = client.newCall(request).
-//        val json = response.body()?.string()
-//
-//        return  JSONObject(json)
-//
-//        client.newCall(request).enqueue(object : Callback {
-//            override fun onFailure(call: Call, e: IOException) {
-//                // Handle failure
-//            }
-//
-//            override fun onResponse(call: Call, response: Response) {
-//                val json = response.body()?.string()
-//                val jsonObject = JSONObject(json)
-//
-//                Log.i("video", videoId.toString() + "," + startTime.toString())
-//            }
-//        })
-
     }
 
 
     private fun sendVideo() {
         CoroutineScope(Dispatchers.Main).launch {
 
-            //백그라운드 쓰레드에서 네트워크 통신을 한다음에(await로 백그라운드 쓰레드가 완료될때까지 기다림)
+            val loadingView = showLoadingView()
+
+            Log.i("request", speechText)
+
             val result = CoroutineScope(Dispatchers.IO).async {
                 getJsonFromServer()
             }.await()
-            //백그라운드 쓰레드의 동작이 끝나면 메인쓰레드에서 ui업데이트를 한다.
-//
+
+
+            windowManager.removeView(loadingView)
+
             val jsonObject = JSONObject(result)
             videoId = jsonObject.getString("videoId")
             startTime = jsonObject.getInt("startTime").toFloat()
 
-            Log.i("test", videoId!!)
+
             showYoutube()
         }
 
-//        CoroutineScope(Dispatchers.IO).launch {
-//            val result = getJsonFromServer()
-//
-//            // UI 스레드에서 뷰를 업데이트합니다.
-//            withContext(Dispatchers.Main) {
-////                videoId = result.getString("videoId")
-////                startTime = result.getInt("startTime").toFloat()
-//
-//                showYoutube()
-//            }
-//        }
+    }
+
+    private fun showLoadingView(): View {
+        val loadingView = getLoadingView()
+
+        val wmParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+        wmParams.gravity = Gravity.CENTER_HORIZONTAL
+        windowManager.addView(loadingView, wmParams)
+
+        return loadingView
+    }
+
+    private fun getLoadingView(): View {
+        return inflater.inflate(R.layout.view_loading, null)
+    }
+
+    private fun showNoAudioView() {
+        val noAudioView = getNoAudioView()
+
+        val wmParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+        wmParams.gravity = Gravity.CENTER_HORIZONTAL
+        windowManager.addView(noAudioView, wmParams)
+    }
+
+    private fun getNoAudioView(): View{
+        val noAudioView = inflater.inflate(R.layout.view_no_audio, null)
 
 
+        noAudioView.findViewById<Button>(R.id.no_record_exit).setOnClickListener {
+            windowManager?.removeView(noAudioView)
+        }
+
+        noAudioView.findViewById<Button>(R.id.restart_record).setOnClickListener {
+            startRecord()
+            windowManager?.removeView(noAudioView)
+            showRecordPrompt()
+        }
+
+        return noAudioView
     }
 
 
@@ -367,16 +394,13 @@ class MainService : Service() {
         }
 
         view.findViewById<Button>(R.id.stop_record_audio).setOnClickListener {
-            // 음성 녹음 종료
             stopRecord()
-            sendVideo()
-//            Thread {
-//                sendVideo()
-//                showYoutube()
-//            }.start()
 
-            // AsyncTask를 실행하는 코드입니다.
-
+            if (screenFile == null || speechText.isEmpty()) {
+                showNoAudioView()
+            } else {
+                sendVideo()
+            }
 
         }
 
@@ -399,7 +423,7 @@ class MainService : Service() {
 
 
     private fun startRecord() {
-        speechText = null
+        speechText = ""
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(applicationContext);
         speechRecognizer?.setRecognitionListener(recognitionListener())
         speechRecognizer?.startListening(recognizerIntent);
@@ -407,7 +431,7 @@ class MainService : Service() {
 
     private fun recognitionListener() = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) =
-            Toast.makeText(applicationContext, "음성인식 시작", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "음성인식 중..", Toast.LENGTH_SHORT).show()
 
         override fun onRmsChanged(rmsdB: Float) {}
 
@@ -491,7 +515,6 @@ class MainService : Service() {
                             )
                             bitmap.copyPixelsFromBuffer(buffer)
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-
                             screenFile = file
 
                         } finally {
