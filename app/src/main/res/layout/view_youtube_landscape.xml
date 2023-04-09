@@ -22,18 +22,6 @@
             android:maxLines="1"
             android:ellipsize="end"/>
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/youtube_next_button_landscape"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/radius"
-            android:backgroundTint="@color/primary_button"
-            android:paddingVertical="10dp"
-            android:paddingHorizontal="20dp"
-            android:text="다른 영상"
-            android:textAlignment="center"
-            android:textColor="@color/white"
-            android:textSize="16dp" />
-        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/youtube_exit_button_landscape"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
