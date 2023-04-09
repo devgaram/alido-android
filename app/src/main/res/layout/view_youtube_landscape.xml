@@ -10,22 +10,36 @@
     <androidx.appcompat.widget.LinearLayoutCompat
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center">
+        >
         <TextView
+            android:id="@+id/generation_result_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="물어보신 걸 알려드리는 유튜브 영상이에요!"
-            android:textAlignment="center"
             android:textColor="@color/black"
-            android:textSize="20dp" />
+            android:textSize="20dp"
+            android:layout_weight="1"/>
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/youtube_next_button_landscape"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/radius"
+            android:backgroundTint="@color/primary_button"
+            android:paddingVertical="10dp"
+            android:paddingHorizontal="20dp"
+            android:text="다른 영상"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textSize="16dp" />
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/youtube_exit_button_landscape"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/radius"
             android:layout_marginLeft="20dp"
             android:backgroundTint="@color/secondary_button"
             android:paddingVertical="10dp"
+            android:paddingHorizontal="20dp"
             android:text="나가기"
             android:textAlignment="center"
             android:textColor="@color/white"

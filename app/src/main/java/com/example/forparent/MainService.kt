@@ -23,6 +23,7 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
@@ -54,10 +55,10 @@ class MainService : Service() {
     private var speechRecognizer: SpeechRecognizer? = null
     private var speechText: String = ""
     private var screenFile: File? = null
-    private var packageName: String = ""
 
     private var videoId: String? = null
     private var startTime: Float? = 0f
+    private var generationResultText:String = ""
 
 
 
@@ -222,6 +223,9 @@ class MainService : Service() {
         val playerView: YouTubePlayerView = view.findViewById(R.id.youtube_player_view)
         val playerLandView: YouTubePlayerView = landView.findViewById(R.id.youtube_player_view_landscape)
 
+        val resultTextView = landView.findViewById<TextView>(R.id.generation_result_text)
+        resultTextView.text = "테스트"
+
         playerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {
                 youTubePlayer.cueVideo(videoId!!, startTime!!)
@@ -283,7 +287,6 @@ class MainService : Service() {
                 RequestBody.create(MediaType.parse("image/*"), screenFile!!)
             )
             .addFormDataPart("input_text", speechText)
-            .addFormDataPart("package_name", packageName)
             .build()
 
         val request = Request.Builder()
@@ -293,11 +296,11 @@ class MainService : Service() {
 
 
         client.newCall(request).execute().use { response ->
-            return if (response.body() != null) {
+            return if (response.isSuccessful && response.body() != null) {
                 response.body()!!.string()
 
             } else {
-                "body is null"
+                """{"key1":"value1", "key2":null}"""
             }
         }
 
@@ -314,14 +317,18 @@ class MainService : Service() {
             }.await()
 
 
+            if (result ==  """{"key1":"value1", "key2":null}""") {
+                Toast.makeText(applicationContext, "서버 에러 발생", Toast.LENGTH_SHORT).show()
+            }
             windowManager.removeView(loadingView)
 
             val jsonObject = JSONObject(result)
-            videoId = jsonObject.getString("videoId")
-            startTime = jsonObject.getInt("startTime").toFloat()
+            videoId = jsonObject.optString("videoId")
+            startTime = jsonObject.optInt("startTime").toFloat()
+            generationResultText = jsonObject.optString("generation_result_text")
 
 
-            if (videoId != null) {
+            if (videoId!!.isNotEmpty()) {
                 showYoutube()
             } else {
                 showNoAudioView()
