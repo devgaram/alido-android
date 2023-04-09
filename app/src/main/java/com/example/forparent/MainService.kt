@@ -404,15 +404,23 @@ class MainService : Service() {
         }
 
         view.findViewById<Button>(R.id.stop_record_audio).setOnClickListener {
-            stopRecord()
-            windowManager.removeView(view)
 
-            Log.i("test", speechText)
-            if (speechText.isEmpty()) {
-                showNoAudioView()
-            } else {
-                sendVideo()
-            }
+            val loadingView =  showLoadingView()
+
+            Handler(Looper.getMainLooper()).postDelayed({
+
+                stopRecord()
+                windowManager.removeView(loadingView)
+                windowManager.removeView(view)
+
+                Log.i("test", speechText)
+                if (speechText.isEmpty()) {
+                    showNoAudioView()
+                } else {
+                    sendVideo()
+                }
+            },2000)
+
 
         }
 
