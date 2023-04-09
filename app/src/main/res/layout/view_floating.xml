@@ -7,8 +7,8 @@
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/show_prompt_button"
-        android:layout_width="100sp"
-        android:layout_height="100sp"
+        android:layout_width="108dp"
+        android:layout_height="108dp"
         android:background="@drawable/floating"
         tools:ignore="MissingConstraints"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -17,8 +17,10 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="눌러서 이동"
+        android:text="텍스트 잡고 이동"
         android:textColor="@color/black"
+        android:background="@color/white"
+        android:textSize="18dp"
         app:layout_constraintTop_toBottomOf="@+id/show_prompt_button"
         tools:ignore="MissingConstraints"
         app:layout_constraintLeft_toLeftOf="parent"

@@ -31,7 +31,6 @@ class MainActivity : AppCompatActivity() {
         checkAudioPermission()
         checkStoragePermission()
         checkMediaProjectPermission()
-        checkPackageStats()
 
 
         val startButton = findViewById<Button>(R.id.start_button)
@@ -129,15 +128,6 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-    }
-
-    private fun checkPackageStats() {
-        val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
-        if (mode != AppOpsManager.MODE_ALLOWED) {
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-            startActivity(intent)
         }
     }
 

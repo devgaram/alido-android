@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/cardview_shadow_start_color"
-    android:padding="20sp"
+    android:padding="20dp"
     android:orientation="vertical"
     android:gravity="center">
     <androidx.appcompat.widget.LinearLayoutCompat
@@ -15,45 +15,45 @@
         android:orientation="vertical"
         android:gravity="center">
         <ImageView
-            android:layout_width="286sp"
-            android:layout_height="187sp"
+            android:layout_width="286dp"
+            android:layout_height="187dp"
             android:src="@drawable/record_prompt" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20sp"
+            android:layout_marginTop="20dp"
             android:textAlignment="center"
             android:text="모르는 걸 휴대폰에\n소리 내어 말해보세요!"
             android:textColor="@color/black"
-            android:textSize="32sp"/>
+            android:textSize="32dp"/>
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/stop_record_audio"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="40sp"
-            android:layout_marginHorizontal="20sp"
-            android:paddingHorizontal="70sp"
-            android:paddingVertical="20sp"
+            android:layout_marginTop="40dp"
+            android:layout_marginHorizontal="20dp"
+            android:paddingHorizontal="70dp"
+            android:paddingVertical="20dp"
             android:backgroundTint="@color/primary_button"
             android:background="@drawable/radius"
             android:textColor="@color/white"
             android:textAlignment="center"
-            android:textSize="24sp"
+            android:textSize="24dp"
             android:text="다 말했어요!"/>
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/exit_record_audio"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="25sp"
-            android:layout_marginHorizontal="20sp"
-            android:paddingHorizontal="70sp"
-            android:paddingVertical="20sp"
+            android:layout_marginTop="25dp"
+            android:layout_marginHorizontal="20dp"
+            android:paddingHorizontal="70dp"
+            android:paddingVertical="20dp"
             android:backgroundTint="@color/secondary_button"
             android:background="@drawable/radius"
             android:textColor="@color/white"
             android:textAlignment="center"
-            android:textSize="24sp"
+            android:textSize="24dp"
             android:text="나가기"/>
     </androidx.appcompat.widget.LinearLayoutCompat>
 </androidx.appcompat.widget.LinearLayoutCompat>

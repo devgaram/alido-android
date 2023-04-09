@@ -164,25 +164,9 @@ class MainService : Service() {
         view.findViewById<Button>(R.id.show_prompt_button).setOnClickListener {
             captureScreen()
             showPrompt()
-            setPackageNameFromStatService()
         }
 
         return view
-    }
-
-
-    private fun setPackageNameFromStatService() {
-        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val currentTime = System.currentTimeMillis()
-        val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_BEST, currentTime - 1000 * 60 * 5, currentTime)
-
-        if (stats != null) {
-            val mostRecentStats = stats.sortedByDescending { it.lastTimeUsed }.firstOrNull()
-            if (mostRecentStats != null) {
-                packageName = mostRecentStats.packageName
-                Log.d("Foreground app", "Package name: $packageName")
-            }
-        }
     }
 
     private fun showPrompt() {
@@ -262,8 +246,8 @@ class MainService : Service() {
 
                         wmParams.gravity = Gravity.CENTER_HORIZONTAL
                         wmParams.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        windowManager.removeView(view)
                         windowManager.addView(landView, wmParams)
+                        windowManager.removeView(view)
                     }
                     else -> Log.i("t", "")
                 }
