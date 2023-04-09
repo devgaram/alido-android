@@ -224,7 +224,7 @@ class MainService : Service() {
         val playerLandView: YouTubePlayerView = landView.findViewById(R.id.youtube_player_view_landscape)
 
         val resultTextView = landView.findViewById<TextView>(R.id.generation_result_text)
-        resultTextView.text = "테스트"
+        resultTextView.text = "“"+ generationResultText + "” 영상을 찾았어요"
 
         playerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
             override fun onReady(youTubePlayer: YouTubePlayer) {

@@ -18,7 +18,9 @@
             android:text="물어보신 걸 알려드리는 유튜브 영상이에요!"
             android:textColor="@color/black"
             android:textSize="20dp"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"/>
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/youtube_next_button_landscape"
             android:layout_width="wrap_content"
